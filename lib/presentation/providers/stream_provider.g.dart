@@ -21,7 +21,7 @@ final class UserInChatProvider extends $FunctionalProvider<
           argument: null,
           retry: null,
           name: r'userInChatProvider',
-          isAutoDispose: true,
+          isAutoDispose: false,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
@@ -41,4 +41,4 @@ final class UserInChatProvider extends $FunctionalProvider<
   }
 }
 
-String _$userInChatHash() => r'1d2106d97e3b76f08410be852fd36df026933c9a';
+String _$userInChatHash() => r'8229ca0ea042295d6872aaa669a7f1518597d35f';

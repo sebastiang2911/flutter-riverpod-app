@@ -3,7 +3,7 @@ import 'package:riverpod_app/config/config.dart';
 
 part 'stream_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<List<String>> userInChat(Ref ref) async* {
   final names = <String>[];
   // yield names;

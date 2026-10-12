@@ -1,44 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_app/presentation/providers/providers.dart';
 import 'package:riverpod_app/presentation/providers/todo_state_notifier_provider.dart';
 
-class StateNotifierScreen extends StatelessWidget {
+class StateNotifierScreen extends ConsumerWidget {
   const StateNotifierScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('State Notifier Provider'),
-      ),
-      body: _TodosView(),
-    );
-  }
-}
-
-class _TodosView extends ConsumerWidget {
-  const _TodosView({super.key});
-
-  @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currenFilter = ref.watch(todoCurrentFilterProvider);
-    final todos = ref.watch(filteredGuestProvider);
+    final filter = ref.watch(stateNotifierTodoFilterProvider);
+    final todos = ref.watch(filteredStateNotifierTodosProvider);
 
-    return Column(
-      children: [
-        SegmentedButton(
-          segments: const [
-            ButtonSegment(value: FilterType.all, icon: Text('Todos')),
-            ButtonSegment(value: FilterType.completed, icon: Text('Invitados')),
-            ButtonSegment(value: FilterType.all, icon: Text('No invitados')),
-          ],
-          selected: <FilterType>{currenFilter},
-          onSelectionChanged: (value) {
-            ref.read(todoCurrentFilterProvider.notifier).state = value.first;
-          },
-        )
-      ],
+    return Scaffold(
+      appBar: AppBar(title: const Text('StateNotifierProvider')),
+      body: Column(
+        children: [
+          const ListTile(
+            title: Text('Immutable state'),
+            subtitle: Text('Every action assigns a new List<Todo> to state.'),
+          ),
+          SegmentedButton<StateNotifierTodoFilter>(
+            segments: const [
+              ButtonSegment(
+                value: StateNotifierTodoFilter.all,
+                label: Text('All'),
+              ),
+              ButtonSegment(
+                value: StateNotifierTodoFilter.completed,
+                label: Text('Done'),
+              ),
+              ButtonSegment(
+                value: StateNotifierTodoFilter.pending,
+                label: Text('Pending'),
+              ),
+            ],
+            selected: {filter},
+            onSelectionChanged: (selection) {
+              ref.read(stateNotifierTodoFilterProvider.notifier).state =
+                  selection.first;
+            },
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: todos.length,
+              itemBuilder: (context, index) {
+                final todo = todos[index];
+                return CheckboxListTile(
+                  title: Text(todo.description),
+                  value: todo.done,
+                  onChanged: (_) => ref
+                      .read(stateNotifierTodosProvider.notifier)
+                      .toggleTodo(todo.id),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () =>
+            ref.read(stateNotifierTodosProvider.notifier).addTodo(),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

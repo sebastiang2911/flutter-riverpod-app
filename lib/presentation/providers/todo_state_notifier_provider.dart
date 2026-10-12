@@ -1,52 +1,36 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:riverpod_app/config/config.dart';
 import 'package:riverpod_app/domain/domain.dart';
-import 'package:riverpod_app/presentation/providers/providers.dart';
 import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
-final filteredGuestProvider = Provider<List<Todo>>((ref) {
-  final selectedFilter = ref.watch(todoCurrentFilterProvider);
-  final todos = ref.watch(todosStateNotifierProvider);
+enum StateNotifierTodoFilter { all, completed, pending }
 
-  switch (selectedFilter) {
-    case FilterType.all:
-      return todos;
-    case FilterType.completed:
-      return todos.where((todo) => todo.done).toList();
-    case FilterType.pending:
-      return todos.where((todo) => !todo.done).toList();
-  }
+final stateNotifierTodoFilterProvider =
+    StateProvider<StateNotifierTodoFilter>((ref) => StateNotifierTodoFilter.all);
+
+final stateNotifierTodosProvider =
+    StateNotifierProvider<StateNotifierTodos, List<Todo>>(
+  (ref) => StateNotifierTodos(),
+);
+
+final filteredStateNotifierTodosProvider = Provider<List<Todo>>((ref) {
+  final filter = ref.watch(stateNotifierTodoFilterProvider);
+  final todos = ref.watch(stateNotifierTodosProvider);
+
+  return switch (filter) {
+    StateNotifierTodoFilter.all => todos,
+    StateNotifierTodoFilter.completed =>
+      todos.where((todo) => todo.done).toList(),
+    StateNotifierTodoFilter.pending =>
+      todos.where((todo) => !todo.done).toList(),
+  };
 });
 
-final todosStateNotifierProvider =
-    NotifierProvider<TodosNotifier, List<Todo>>(TodosNotifier.new);
-
-class TodosNotifier extends Notifier<List<Todo>> {
-  @override
-  List<Todo> build() => [
-        Todo(
-          id: _uuid.v4(),
-          description: RandomGenerator.getRandomName(),
-          completedAt: DateTime.now(),
-        ),
-        Todo(
-          id: _uuid.v4(),
-          description: RandomGenerator.getRandomName(),
-          completedAt: null,
-        ),
-        Todo(
-          id: _uuid.v4(),
-          description: RandomGenerator.getRandomName(),
-          completedAt: null,
-        ),
-        Todo(
-          id: _uuid.v4(),
-          description: RandomGenerator.getRandomName(),
-          completedAt: DateTime.now(),
-        ),
-      ];
+class StateNotifierTodos extends StateNotifier<List<Todo>> {
+  StateNotifierTodos() : super(_initialTodos());
 
   void addTodo() {
     state = [
@@ -60,10 +44,29 @@ class TodosNotifier extends Notifier<List<Todo>> {
   }
 
   void toggleTodo(String id) {
-    state = state.map((todo) {
-      if (todo.id != id) return todo;
-      if (todo.done) return todo.copyWith(completedAt: null);
-      return todo.copyWith(completedAt: DateTime.now());
-    }).toList();
+    state = [
+      for (final todo in state)
+        if (todo.id == id)
+          Todo(
+            id: todo.id,
+            description: todo.description,
+            completedAt: todo.done ? null : DateTime.now(),
+          )
+        else
+          todo,
+    ];
   }
 }
+
+List<Todo> _initialTodos() => [
+      Todo(
+        id: _uuid.v4(),
+        description: RandomGenerator.getRandomName(),
+        completedAt: DateTime.now(),
+      ),
+      Todo(
+        id: _uuid.v4(),
+        description: RandomGenerator.getRandomName(),
+        completedAt: null,
+      ),
+    ];
